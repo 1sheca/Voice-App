@@ -29,6 +29,12 @@
         android:layout_height="wrap_content"
         android:text="View Recordings" />
 
+    <Button
+        android:id="@+id/openGalleryButton"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Open Gallery/File Explorer" />
+
     <ListView
         android:id="@+id/recordingsListView"
         android:layout_width="match_parent"

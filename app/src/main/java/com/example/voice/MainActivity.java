@@ -1,12 +1,16 @@
 package com.example.voice;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.provider.DocumentsContract;
+import android.provider.MediaStore;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
@@ -23,8 +27,10 @@ public class MainActivity extends AppCompatActivity {
 
     private static final int REQUEST_RECORD_AUDIO_PERMISSION = 1;
     private static final int REQUEST_WRITE_STORAGE_PERMISSION = 2;
+    private static final int REQUEST_CAMERA_PERMISSION = 3; // Camera permission request code
+    private static final int PICK_FILE_REQUEST = 4; // For file explorer or gallery
 
-    private Button startButton, stopButton, playButton, viewRecordingsButton;
+    private Button startButton, stopButton, playButton, viewRecordingsButton, openGalleryButton;
     private MediaRecorder mediaRecorder;
     private MediaPlayer mediaPlayer;
     private String currentFilePath;
@@ -43,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         stopButton = findViewById(R.id.stopButton);
         playButton = findViewById(R.id.playButton);
         viewRecordingsButton = findViewById(R.id.viewRecordingsButton);
+        openGalleryButton = findViewById(R.id.openGalleryButton); // Added gallery button
         recordingsListView = findViewById(R.id.recordingsListView);
 
         // Initialize recordings directory
@@ -63,6 +70,7 @@ public class MainActivity extends AppCompatActivity {
         stopButton.setOnClickListener(v -> stopRecording());
         playButton.setOnClickListener(v -> playRecording());
         viewRecordingsButton.setOnClickListener(v -> viewRecordings());
+        openGalleryButton.setOnClickListener(v -> openGalleryOrFileExplorer()); // Open gallery/file explorer
     }
 
     private void requestPermissions() {
@@ -77,6 +85,11 @@ public class MainActivity extends AppCompatActivity {
                 ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, REQUEST_WRITE_STORAGE_PERMISSION);
             }
         }
+
+        // Check for camera permission
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.CAMERA}, REQUEST_CAMERA_PERMISSION);
+        }
     }
 
     @Override
@@ -89,6 +102,10 @@ public class MainActivity extends AppCompatActivity {
 
         if (requestCode == REQUEST_WRITE_STORAGE_PERMISSION && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
             Toast.makeText(this, "Storage permission is required", Toast.LENGTH_SHORT).show();
+        }
+
+        if (requestCode == REQUEST_CAMERA_PERMISSION && grantResults[0] != PackageManager.PERMISSION_GRANTED) {
+            Toast.makeText(this, "Camera permission is required", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -177,5 +194,22 @@ public class MainActivity extends AppCompatActivity {
 
         // Notify the adapter to refresh the list view
         recordingsAdapter.notifyDataSetChanged();
+    }
+
+    private void openGalleryOrFileExplorer() {
+        // Intent to open file explorer or gallery
+        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        intent.setType("*/*"); // Select all file types
+        startActivityForResult(intent, PICK_FILE_REQUEST);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == PICK_FILE_REQUEST && resultCode == RESULT_OK && data != null) {
+            Uri selectedUri = data.getData();
+            Toast.makeText(this, "Selected file: " + selectedUri, Toast.LENGTH_SHORT).show();
+        }
     }
 }
